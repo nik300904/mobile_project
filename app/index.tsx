@@ -1,48 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Button, TextInput, FlatList, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 
 // Интерфейс для описания структуры данных фильма
 interface Movie {
-  id: string;
-  title: string;
-  imageUrl: any;
+  id: string; // Уникальный идентификатор фильма
+  title: string; // Название фильма
+  imageUrl: any; // Поле для локального изображения
+  genre: string; // Жанр фильма
 }
 
 const App = () => {
-  const [query, setQuery] = useState<string>('');
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [query, setQuery] = useState<string>(''); 
+  const [movies, setMovies] = useState<Movie[]>([]); 
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null); 
+  const [modalVisible, setModalVisible] = useState<boolean>(false); 
+  const [favorites, setFavorites] = useState<Movie[]>([]); 
 
-  // Статичный список фильмов с локальными изображениями
+  // Статичный список фильмов с локальными изображениями и жанрами
   const exampleMovies: Movie[] = [
-    { id: '1', title: 'Пчеловод', imageUrl: require('../assets/images/bee.jpg') },
-    { id: '2', title: 'Револьвер', imageUrl: require('../assets/images/revol.jpg') },
-    { id: '3', title: 'Шальная карта', imageUrl: require('../assets/images/card.jpg') },
-    { id: '4', title: 'Большой куш', imageUrl: require('../assets/images/snatch.jpg') },
-    { id: '5', title: 'Перевозчик', imageUrl: require('../assets/images/perevoz.jpg') },
+    { id: '1', title: 'Пчеловод', imageUrl: require('../assets/images/bee.jpg'), genre: 'Драма' },
+    { id: '2', title: 'Револьвер', imageUrl: require('../assets/images/revol.jpg'), genre: 'Экшн' },
+    { id: '3', title: 'Шальная карта', imageUrl: require('../assets/images/card.jpg'), genre: 'Комедия' },
+    { id: '4', title: 'Большой куш', imageUrl: require('../assets/images/snatch.jpg'), genre: 'Криминал' },
+    { id: '5', title: 'Перевозчик', imageUrl: require('../assets/images/perevoz.jpg'), genre: 'Экшн' },
   ];
+
+  // Эффект для инициализации списка фильмов при загрузке приложения
+  useEffect(() => {
+    setMovies(exampleMovies);
+  }, []);
 
   // Функция для поиска фильмов по названию
   const searchMovies = () => {
-    // Фильтрация фильмов по запросу
     const filteredMovies = exampleMovies.filter(movie =>
       movie.title.toLowerCase().includes(query.toLowerCase())
     );
-
-    setMovies(filteredMovies);
+    setMovies(filteredMovies); 
   };
 
-  // Функция для обработки нажатия на фильм
+  // Функция для обработки нажатия на фильм или избранный фильм
   const handleMoviePress = (movie: Movie) => {
-    setSelectedMovie(movie);
-    setModalVisible(true);
+    setSelectedMovie(movie); 
+    setModalVisible(true); 
   };
 
   // Функция для закрытия модального окна
   const closeModal = () => {
-    setModalVisible(false);
-    setSelectedMovie(null);
+    setModalVisible(false); 
+    setSelectedMovie(null); 
+  };
+
+  // Функция для добавления/удаления фильма из избранных
+  const toggleFavorite = (movie: Movie) => {
+    if (favorites.includes(movie)) {
+      setFavorites(favorites.filter(fav => fav.id !== movie.id)); 
+    } else {
+      setFavorites([...favorites, movie]); 
+    }
   };
 
   return (
@@ -52,44 +66,62 @@ const App = () => {
         style={styles.input} 
         placeholder="Введите название фильма" 
         value={query}
-        onChangeText={setQuery} // Обновляем состояние при изменении текста в поле ввода
+        onChangeText={setQuery} 
       />
       <Button 
         title="Поиск" 
-        onPress={searchMovies} // Запускаем поиск при нажатии кнопки
+        onPress={searchMovies} 
       />
+      
+      {/* Список фильмов */}
       <FlatList 
-        data={movies.length > 0 ? movies : exampleMovies} // Если нет результатов поиска, показываем все фильмы
-        keyExtractor={item => item.id} // Уникальный ключ для каждого элемента списка
+        data={movies} 
+        keyExtractor={item => item.id} 
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleMoviePress(item)} style={styles.movieItem}>
-            <Image source={item.imageUrl} style={styles.thumbnail} /> {/* Отображаем изображение фильма */}
-            <Text>{item.title}</Text> {/* Отображаем название фильма */}
+            <Image source={item.imageUrl} style={styles.thumbnail} /> 
+            <Text>{item.title}</Text> 
+            <Button 
+              title={favorites.includes(item) ? "Убрать из избранного" : "Добавить в избранное"} 
+              onPress={() => toggleFavorite(item)} 
+            />
           </TouchableOpacity>
         )}
-        horizontal
-        showsHorizontalScrollIndicator={false}
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
       />
 
       {/* Модальное окно для отображения изображения выбранного фильма */}
       {selectedMovie && (
         <Modal
-          animationType="slide"
-          transparent={false}
-          visible={modalVisible}
-          onRequestClose={closeModal} // Закрытие модального окна при нажатии кнопки "Назад"
+          animationType="slide" 
+          transparent={false} 
+          visible={modalVisible} 
+          onRequestClose={closeModal} 
         >
           <View style={styles.modalContainer}>
-            <Image source={selectedMovie.imageUrl} style={styles.image} /> {/* Отображаем изображение выбранного фильма */}
-            <Button title="Закрыть" onPress={closeModal} /> {/* Кнопка для закрытия модального окна */}
+            <Image source={selectedMovie.imageUrl} style={styles.image} /> 
+            <Button title="Закрыть" onPress={closeModal} /> 
           </View>
         </Modal>
       )}
+      
+      {/* Список избранных фильмов */}
+      <Text style={styles.favoritesTitle}>Избранные фильмы:</Text>
+      <FlatList 
+        data={favorites} // Отображаем список избранных фильмов
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handleMoviePress(item)} style={styles.favoriteItem}>
+            <Text>{item.title}</Text> {/* Отображаем название избранного фильма */}
+          </TouchableOpacity>
+        )}
+      />
     </View>
   );
 };
 
-// Стили для компонентов приложения
+// Стили для компонентов приложения (оставлены без комментариев)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -118,7 +150,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   thumbnail: {
-    width: '100%',
+    width: '100%', 
     height: 150,
     resizeMode: 'cover',
   },
@@ -130,11 +162,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   image: {
-    width: 480,
+    width: 480, 
     height: 620,
     aspectRatio: 16 / 9,
     marginBottom: 20,
   },
+   favoritesTitle:{
+     fontSize :20,
+     marginTop :20,
+     marginBottom :10,
+   },
+   favoriteItem:{
+     paddingVertical :10,
+     paddingHorizontal :10,
+     borderBottomColor : '#ccc',
+     borderBottomWidth :1,
+     width:'100%',
+   }
 });
 
 export default App;
