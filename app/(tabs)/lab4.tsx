@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     Image,
     Modal,
-    Button,
+    Button, Alert,
 } from 'react-native';
 import { Video } from 'expo-av';
 import { Audio } from 'expo-av';
@@ -18,8 +18,8 @@ interface Movie {
     id: string;
     title: string;
     imageUrl: any; // Image source type
-    audioUrl: any;
-    videoUrl: any;
+    audioUrl: string;
+    videoUrl: string;
 }
 
 const MediaScreen = () => {
@@ -59,13 +59,17 @@ const MediaScreen = () => {
     };
 
     const playAudio = async (url: string) => {
-        if (sound) {
-            sound.stopAsync();
-            setSound(null);
+        try {
+            if (sound) {
+                await sound.stopAsync();
+                setSound(null);
+            }
+            const { sound: newSound } = await Audio.Sound.createAsync({ uri: url });
+            setSound(newSound);
+            await newSound.playAsync();
+        } catch (error) {
+            Alert.alert('Ошибка воспроизведения аудио', error.message);
         }
-        const { sound: newSound } = await Audio.Sound.createAsync({ uri: url });
-        setSound(newSound);
-        await newSound.playAsync();
     };
 
     return (
@@ -88,7 +92,7 @@ const MediaScreen = () => {
             {selectedMovie && (
                 <Modal
                     animationType="slide"
-                    transparent={false}
+                    transparent={true}
                     visible={modalVisible}
                     onRequestClose={closeModal}
                 >

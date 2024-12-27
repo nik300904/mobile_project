@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {
   View,
   Text,
@@ -20,61 +20,48 @@ interface Movie {
   genre: string;
 }
 
+const exampleMovies: Movie[] = [
+  { id: 1, title: 'Пчеловод', imageUrl: require('../../assets/images/bee.jpg'), genre: 'Драма' },
+  { id: 2, title: 'Револьвер', imageUrl: require('../../assets/images/revol.jpg'), genre: 'Экшн' },
+  { id: 3, title: 'Шальная карта', imageUrl: require('../../assets/images/card.jpg'), genre: 'Комедия' },
+  { id: 4, title: 'Большой куш', imageUrl: require('../../assets/images/snatch.jpg'), genre: 'Комедия' },
+  { id: 5, title: 'Перевозчик', imageUrl: require('../../assets/images/perevoz.jpg'), genre: 'Экшн' },
+];
+
 const App = () => {
   const [query, setQuery] = useState<string>('');
-  const [movies, setMovies] = useState<Movie[]>([]);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [favorites, setFavorites] = useState<Movie[]>([]);
-  const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // Состояние для переключения темы
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [genreFilter, setGenreFilter] = useState('');
 
-  const exampleMovies: Movie[] = [
-    { id: 1, title: 'Пчеловод', imageUrl: require('../../assets/images/bee.jpg'), genre: 'Драма' },
-    { id: 2, title: 'Револьвер', imageUrl: require('../../assets/images/revol.jpg'), genre: 'Экшн' },
-    { id: 3, title: 'Шальная карта', imageUrl: require('../../assets/images/card.jpg'), genre: 'Комедия' },
-    { id: 4, title: 'Большой куш', imageUrl: require('../../assets/images/snatch.jpg'), genre: 'Криминал' },
-    { id: 5, title: 'Перевозчик', imageUrl: require('../../assets/images/perevoz.jpg'), genre: 'Экшн' },
-  ];
-
-  useEffect(() => {
-    setMovies(exampleMovies);
-    setFilteredMovies(exampleMovies);
-  }, []);
-
-  const searchMovies = () => {
-    const filtered = exampleMovies.filter(movie =>
-        movie.title.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredMovies(filtered);
-  };
-
-  const filterByGenre = (genre: string) => {
-    const filtered = exampleMovies.filter(movie => movie.genre === genre);
-    setFilteredMovies(filtered);
-  };
+  const filteredMovies = useMemo(() => {
+    return exampleMovies.filter(movie => {
+      const matchesQuery = movie.title.toLowerCase().includes(query.toLowerCase());
+      const matchesGenre = genreFilter ? movie.genre === genreFilter : true;
+      return matchesQuery && matchesGenre;
+    });
+  }, [query, genreFilter]);
 
   const handleMoviePress = (movie: Movie) => {
     setSelectedMovie(movie);
     setModalVisible(true);
   };
 
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedMovie(null);
+  const toggleFavorite = (movie: Movie): void => {
+    setFavorites(prevFavorites => {
+      return prevFavorites.some(fav => fav.id === movie.id)
+          ? prevFavorites.filter(fav => fav.id !== movie.id)
+          : [...prevFavorites, movie];
+    });
   };
 
-  const toggleFavorite = (movie: Movie) => {
-    if (favorites.includes(movie)) {
-      setFavorites(favorites.filter(fav => fav.id !== movie.id));
-    } else {
-      setFavorites([...favorites, movie]);
-    }
-  };
+  const toggleSwitch = () => setIsDarkMode(prevState => !prevState);
 
-  const toggleSwitch = () => setIsDarkMode(previousState => !previousState); // Переключение темы
+  const styles = isDarkMode ? darkStyles : lightStyles;
 
-  const styles = isDarkMode ? darkStyles : lightStyles; // Выбор стилей в зависимости от темы
+  const genres = ['Экшн', 'Драма', 'Комедия', 'Все'];
 
   return (
       <KeyboardAvoidingView
@@ -85,20 +72,12 @@ const App = () => {
           {/* Переключатель темы */}
           <View style={styles.switchContainer}>
             <Text style={styles.switchText}>Подбор фильмов</Text>
-            {Platform.OS === 'ios' ? (
-                <Switch
-                    value={isDarkMode}
-                    onValueChange={toggleSwitch}
-                    trackColor={{ false: '#767577', true: '#81b0ff' }}
-                    thumbColor={isDarkMode ? '#f5dd4b' : '#f4f3f4'}
-                />
-            ) : (
-                <TouchableOpacity style={lightStyles.androidButton} onPress={toggleSwitch}>
-                  <Text style={lightStyles.androidButtonText}>
-                    {isDarkMode ? 'Включить светлую тему' : 'Включить тёмную тему'}
-                  </Text>
-                </TouchableOpacity>
-            )}
+            <Switch
+                value={isDarkMode}
+                onValueChange={toggleSwitch}
+                trackColor={{ false: '#767577', true: '#81b0ff' }}
+                thumbColor={isDarkMode ? '#f5dd4b' : '#f4f3f4'}
+            />
           </View>
 
           <TextInput
@@ -109,32 +88,28 @@ const App = () => {
               onChangeText={setQuery}
           />
 
-          <TouchableOpacity style={styles.searchButton} onPress={searchMovies}>
-            <Text style={styles.searchButtonText}>Поиск</Text>
-          </TouchableOpacity>
-
+          {/* Кнопки фильтров по жанру */}
           <View style={styles.genreContainer}>
-            <TouchableOpacity onPress={() => filterByGenre('Экшн')} style={styles.genreButton}>
-              <Text style={styles.genreButtonText}>Экшн</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => filterByGenre('Драма')} style={styles.genreButton}>
-              <Text style={styles.genreButtonText}>Драма</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => filterByGenre('Комедия')} style={styles.genreButton}>
-              <Text style={styles.genreButtonText}>Комедия</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setFilteredMovies(exampleMovies)} style={styles.genreButton}>
-              <Text style={styles.genreButtonText}>Все</Text>
-            </TouchableOpacity>
+            {genres.map(genre => (
+                <TouchableOpacity
+                    key={genre}
+                    onPress={() => setGenreFilter(genre === 'Все' ? '' : genre)}
+                    style={styles.genreButton}
+                >
+                  <Text style={styles.genreButtonText}>{genre}</Text>
+                </TouchableOpacity>
+            ))}
           </View>
 
-
-
+          {/* Список фильмов */}
           <FlatList
               data={filteredMovies}
               keyExtractor={item => item.id.toString()}
               renderItem={({ item }) => (
-                  <TouchableOpacity onPress={() => handleMoviePress(item)} style={styles.movieItem}>
+                  <TouchableOpacity
+                      onPress={() => handleMoviePress(item)}
+                      style={styles.movieItem}
+                  >
                     <Image source={item.imageUrl} style={styles.thumbnail} />
                     <Text style={styles.movieTitle}>{item.title}</Text>
                     <TouchableOpacity
@@ -142,7 +117,9 @@ const App = () => {
                         onPress={() => toggleFavorite(item)}
                     >
                       <Text style={styles.favoriteButtonText}>
-                        {favorites.includes(item) ? "Удалить из избранного" : "В избранное"}
+                        {favorites.some(fav => fav.id === item.id)
+                            ? 'Удалить из избранного'
+                            : 'В избранное'}
                       </Text>
                     </TouchableOpacity>
                   </TouchableOpacity>
@@ -151,18 +128,22 @@ const App = () => {
               showsHorizontalScrollIndicator={false}
           />
 
+          {/* Модальное окно */}
           {selectedMovie && (
               <Modal
                   animationType="fade"
                   transparent={true}
                   visible={modalVisible}
-                  onRequestClose={closeModal}
+                  onRequestClose={() => setModalVisible(false)}
               >
                 <View style={styles.modalOverlay}>
                   <View style={styles.modalContainer}>
                     <Image source={selectedMovie.imageUrl} style={styles.image} />
                     <Text style={styles.modalTitle}>{selectedMovie.title}</Text>
-                    <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={() => setModalVisible(false)}
+                    >
                       <Text style={styles.closeButtonText}>Закрыть</Text>
                     </TouchableOpacity>
                   </View>
@@ -170,12 +151,16 @@ const App = () => {
               </Modal>
           )}
 
+          {/* Список избранных фильмов */}
           <Text style={styles.favoritesTitle}>Избранные фильмы</Text>
           <FlatList
               data={favorites}
               keyExtractor={item => item.id.toString()}
               renderItem={({ item }) => (
-                  <TouchableOpacity onPress={() => handleMoviePress(item)} style={styles.favoriteItem}>
+                  <TouchableOpacity
+                      onPress={() => handleMoviePress(item)}
+                      style={styles.favoriteItem}
+                  >
                     <Text style={styles.favoriteItemText}>{item.title}</Text>
                   </TouchableOpacity>
               )}
