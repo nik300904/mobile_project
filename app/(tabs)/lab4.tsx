@@ -14,6 +14,7 @@ import { Video } from 'expo-av';
 import { Audio } from 'expo-av';
 import { Asset } from 'expo-asset';
 
+
 interface Movie {
     id: string;
     title: string;
@@ -79,7 +80,7 @@ export const MediaScreen = () => {
                 data={exampleMovies}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <TouchableOpacity onPress={() => handleMoviePress(item)} style={styles.movieItem}>
+                    <TouchableOpacity testID="movie-item" onPress={() => handleMoviePress(item)} style={styles.movieItem}>
                         <Image source={item.imageUrl} style={styles.thumbnail} />
                         <Text style={styles.movieTitle}>{item.title}</Text>
                     </TouchableOpacity>
