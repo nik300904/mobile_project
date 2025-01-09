@@ -22,7 +22,7 @@ interface Movie {
     videoUrl: string;
 }
 
-const MediaScreen = () => {
+export const MediaScreen = () => {
     const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [sound, setSound] = useState<Audio.Sound | null>(null);
