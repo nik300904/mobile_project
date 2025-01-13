@@ -20,7 +20,7 @@ interface Movie {
   genre: string;
 }
 
-const exampleMovies: Movie[] = [
+export const exampleMovies: Movie[] = [
   { id: 1, title: 'Пчеловод', imageUrl: require('../../assets/images/bee.jpg'), genre: 'Драма' },
   { id: 2, title: 'Револьвер', imageUrl: require('../../assets/images/revol.jpg'), genre: 'Экшн' },
   { id: 3, title: 'Шальная карта', imageUrl: require('../../assets/images/card.jpg'), genre: 'Комедия' },
@@ -73,6 +73,7 @@ const App = () => {
           <View style={styles.switchContainer}>
             <Text style={styles.switchText}>Подбор фильмов</Text>
             <Switch
+                testID="theme-switch"
                 value={isDarkMode}
                 onValueChange={toggleSwitch}
                 trackColor={{ false: '#767577', true: '#81b0ff' }}
@@ -81,6 +82,7 @@ const App = () => {
           </View>
 
           <TextInput
+              testID="search-input"
               style={styles.input}
               placeholder="Введите название фильма"
               placeholderTextColor="#999"
@@ -107,6 +109,7 @@ const App = () => {
               keyExtractor={item => item.id.toString()}
               renderItem={({ item }) => (
                   <TouchableOpacity
+                      testID="movie-item"
                       onPress={() => handleMoviePress(item)}
                       style={styles.movieItem}
                   >
@@ -116,7 +119,10 @@ const App = () => {
                         style={styles.favoriteButton}
                         onPress={() => toggleFavorite(item)}
                     >
-                      <Text style={styles.favoriteButtonText}>
+                      <Text
+                      testID={`favorite-button-${item.id}`}
+                      style={styles.favoriteButtonText}
+                      >
                         {favorites.some(fav => fav.id === item.id)
                             ? 'Удалить из избранного'
                             : 'В избранное'}
@@ -158,6 +164,7 @@ const App = () => {
               keyExtractor={item => item.id.toString()}
               renderItem={({ item }) => (
                   <TouchableOpacity
+                      testID={`favorite-movie-${item.id}`}
                       onPress={() => handleMoviePress(item)}
                       style={styles.favoriteItem}
                   >

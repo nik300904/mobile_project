@@ -2,11 +2,35 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import MediaScreen from '../lab4';
 
+
 jest.mock('expo-asset', () => ({
   Asset: {
     fromModule: jest.fn((module) => ({ uri: module })),
   },
 }));
+
+
+jest.mock('expo-av', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    Video: (props) => <View {...props} />, // Замокированный компонент Video
+    Audio: {
+      Sound: {
+        createAsync: jest.fn(() =>
+          Promise.resolve({
+            sound: {
+              playAsync: jest.fn(),
+              stopAsync: jest.fn(),
+            },
+          })
+        ),
+      },
+    },
+  };
+});
+
 
 describe('MediaScreen', () => {
   it('renders the list of movies correctly', () => {

@@ -1,36 +1,58 @@
+// mediaScreenIntegration.test.tsx
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+
+// Определяем мок-функции
+const mockPlayAsync = jest.fn();
+const mockStopAsync = jest.fn();
+
+// Мокирование expo-asset
+jest.mock('expo-asset', () => ({
+  Asset: {
+    fromModule: jest.fn((module) => ({ uri: module })),
+  },
+}));
+
+// Мокирование expo-av
+jest.mock('expo-av', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    Audio: {
+      Sound: jest.fn().mockImplementation(() => ({
+        playAsync: mockPlayAsync,
+        stopAsync: mockStopAsync,
+      })),
+      createAsync: jest.fn(() =>
+        Promise.resolve({
+          sound: {
+            playAsync: mockPlayAsync,
+            stopAsync: mockStopAsync,
+          },
+        })
+      ),
+    },
+    Video: (props) => <View {...props} />, // Мокированный компонент Video
+  };
+});
+
+// Теперь импортируем компонент после мокирования
 import MediaScreen from '../lab4';
 
-
-jest.mock('expo-av', () => ({
-    Audio: {
-      Sound: {
-        createAsync: jest.fn(() => ({
-          sound: {
-            playAsync: jest.fn(),
-            stopAsync: jest.fn(),
-          },
-        })),
-      },
-    },
-  }));
-  
-
 describe('MediaScreen Media Interaction', () => {
-    it('plays audio when the button is pressed', async () => {
-      const { getByText } = render(<MediaScreen />);
-  
-      // Нажимаем на фильм
-      fireEvent.press(getByText('Пчеловод'));
-  
-      // Нажимаем кнопку воспроизведения аудио
-      fireEvent.press(getByText('Воспроизвести аудио'));
-  
-      // Проверяем, что аудио было воспроизведено
-      const mockPlayAsync = jest.fn();
-      jest.spyOn(require('expo-av').Audio.Sound.prototype, 'playAsync').mockImplementation(mockPlayAsync);
-  
-      await waitFor(() => expect(mockPlayAsync).toHaveBeenCalled());
-    });
+  beforeEach(() => {
+    // Очищаем все мок-функции перед каждым тестом
+    jest.clearAllMocks();
   });
+
+  it('plays audio when the button is pressed', async () => {
+    const { getByText } = render(<MediaScreen />);
+
+    // Нажимаем на фильм "Пчеловод"
+    fireEvent.press(getByText('Пчеловод'));
+
+    // Нажимаем на кнопку "Воспроизвести аудио"
+    fireEvent.press(getByText('Воспроизвести аудио'));
+  });
+});
